@@ -1,6 +1,7 @@
 from pypdf import PdfReader
 from langchain_text_splitters import CharacterTextSplitter
-from langchain.schema import Document
+# FIX: Updated import from langchain.schema to langchain_core.documents
+from langchain_core.documents import Document
 from io import BytesIO
 from typing import List
 

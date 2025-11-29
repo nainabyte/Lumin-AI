@@ -1,71 +1,84 @@
-# File: app/db/models.py
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Enum, DateTime, ForeignKey, JSON, text
-from app.config.env import DATABASE_URL
-import logging
-from .chat_history import Conversations, Messages
-from .user import User
-from .data_sources import DataSources
+# backend/app/api/db/models.py
+"""
+Strong SQLAlchemy declarative models used by the app.
+Defines: User, Conversations, Messages, DataSources (table-per-upload)
+"""
 
-logger = logging.getLogger(__name__)
-
-# Create the SQLAlchemy engine
-engine = create_engine(DATABASE_URL)
-meta = MetaData()
-
-# Define tables
-users = Table(
-    "users",
-    meta,
-    Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("name", String(50)),
-    Column("email", String(100), unique=True),
-    Column("hashed_password", String(400), unique=True),
-    Column("created_at", DateTime, server_default=text('CURRENT_TIMESTAMP'))
+from datetime import datetime
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Boolean,
+    ForeignKey,
+    Text,
+    JSON,
+    UniqueConstraint,
+    func,
 )
+from sqlalchemy.orm import relationship, declarative_base
 
-data_sources = Table(
-    "data_sources",
-    meta,
-    Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("user_id", Integer, ForeignKey("users.id")),
-    Column("name", String(50)),
-    Column("type", String(50)),
-    Column("table_name", String(400), nullable=True, unique=True),
-    Column("connection_url", String(400), nullable=True, unique=True),
-    Column("created_at", DateTime, server_default=text('CURRENT_TIMESTAMP'))
-)
-
-conversations = Table(
-    "conversations",
-    meta,
-    Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("user_id", Integer, ForeignKey("users.id")),
-    Column("data_source_id", Integer, ForeignKey("data_sources.id")),
-    # Auto-generated title or first message snippet
-    Column("title", String(200), nullable=True),
-    Column("created_at", DateTime, server_default=text('CURRENT_TIMESTAMP')),
-    Column("updated_at", DateTime, server_default=text(
-        'CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP')),
-)
-
-messages = Table(
-    "messages",
-    meta,
-    Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("conversation_id", Integer, ForeignKey("conversations.id")),
-    Column("role", Enum('user', 'assistant', 'system', name='message_role')),
-    Column("content", JSON),  # The actual message content
-    Column("created_at", DateTime, server_default=text('CURRENT_TIMESTAMP')),
-    Column("updated_at", DateTime, server_default=text(
-        'CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP')),
-)
+Base = declarative_base()
 
 
-def init_db():
-    try:
-        # This will create both the enum type and tables
-        meta.create_all(engine)
-        logger.info("Database initialized successfully")
-    except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
-        raise
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(80), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(256), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    conversations = relationship("Conversations", back_populates="user", cascade="all, delete-orphan")
+    messages = relationship("Messages", back_populates="user", cascade="all, delete-orphan")
+
+
+class Conversations(Base):
+    __tablename__ = "conversations"
+    __table_args__ = (UniqueConstraint("id", "user_id", name="uq_conversation_user"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(250), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    metadata = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User", back_populates="conversations")
+    messages = relationship("Messages", back_populates="conversation", cascade="all, delete-orphan")
+
+
+class Messages(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    role = Column(String(32), nullable=False)  # e.g. "assistant" or "user"
+    content = Column(JSON, nullable=False)     # storing messages as JSON for flexibility
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    conversation = relationship("Conversations", back_populates="messages")
+    user = relationship("User", back_populates="messages")
+
+
+class DataSources(Base):
+    """
+    Represents uploaded dataset metadata. Each new upload can create a new row.
+    The actual table data can be stored in a separate schema/table by the pipeline.
+    """
+    __tablename__ = "data_sources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(250), nullable=False, index=True)
+    table_name = Column(String(250), nullable=False, unique=True)  # physical table where data was inserted
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    rows = Column(Integer, nullable=True)
+    metadata = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    # relationship(s) omitted to avoid circular import complexity; can be added if needed

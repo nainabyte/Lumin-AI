@@ -13,8 +13,12 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Set huggingface token
-os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
-# Set Langsmith traceses
-os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGCHAIN_PROJECT")
+# Fix: Added 'or ""' to prevent crash if HF_TOKEN is missing
+os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN") or ""
+
+# Set Langsmith traces
+# Fix: Added 'or ""' here as well for safety
+os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGCHAIN_PROJECT") or ""
+
 # Enable tracing
 os.environ["LANGCHAIN_TRACING_V2"] = "false"

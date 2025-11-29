@@ -1,28 +1,51 @@
-fastapi
-pandas
-sqlalchemy
-mysql-connector-python
-psycopg2-binary
-psycopg_binary
-pgvector
-langchain_postgres
-uvicorn
-pydantic
-pydantic[email]
-passlib
-pyjwt
-python-dotenv
-pytest
-langchain
-langgraph
-langchain-openai
-langchain-groq
-langchain-ollama
-langchain-community
-autopep8
-prettier
-coloredlogs
-langchain-huggingface
-pypdf
-python-multipart
-alembic
+# =============================
+# ------- CORE WEB STACK -------
+# =============================
+fastapi==0.110.0
+uvicorn==0.29.0
+pydantic==2.7.4
+python-dotenv==1.0.1
+sqlalchemy==2.0.29
+psycopg[binary]==3.1.18
+python-multipart==0.0.9
+email_validator==2.1.0.post1
+
+# =============================
+# ------- DATA & UTILS --------
+# =============================
+pandas==2.2.1
+numpy==1.26.4
+pypdf==4.2.0
+coloredlogs==15.0.1
+autopep8==2.3.2
+pytest==8.1.1
+PyYAML==6.0.1
+
+# =============================
+# ------- AUTHENTICATION -------
+# =============================
+passlib==1.7.4
+bcrypt==4.0.1
+pyjwt==2.8.0
+
+# =============================
+# ------- LANGCHAIN CORE -------
+# =============================
+langchain==0.2.12
+langchain-core==0.2.37
+langchain-community==0.2.11
+langchain-text-splitters==0.2.2
+
+# =============================
+# ------- LANGGRAPH ------------
+# =============================
+langgraph==0.1.10
+
+# =============================
+# ------- AI PROVIDERS ---------
+# =============================
+openai==1.40.0          # fully compatible with langchain-openai
+tiktoken==0.7.0         # required by new langchain-openai
+groq==0.9.0             # newest stable Groq SDK
+langchain-groq==0.1.4   # ⚠️ REQUIRED to avoid "proxies" error
+langchain-openai==0.1.6 # fully compatible with OpenAI 1.40.0

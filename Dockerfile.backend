@@ -1,37 +1,58 @@
-# -------- Step 1: Base Python image for FastAPI Development --------
+# ---------------------------------------------------------
+# STEP 1 — Backend Builder (Installs Python dependencies)
+# ---------------------------------------------------------
 FROM python:3.11-slim AS backend-dev
+
+# System dependencies for psycopg3
+RUN apt-get update && apt-get install -y libpq-dev gcc
 
 WORKDIR /app
 
-# Copy backend-specific files
+# Install backend requirements
 COPY ./backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the backend code
+# Copy backend source code
 COPY ./backend .
 
-# -------- Step 2: Final setup for running dev environments --------
-# Using the base Python image
+
+# ---------------------------------------------------------
+# STEP 2 — Frontend Builder
+# ---------------------------------------------------------
+FROM node:18-alpine AS frontend-dev
+
+WORKDIR /app
+
+# Copy frontend package files
+COPY ./frontend/package*.json ./
+RUN npm install
+
+# Copy all frontend code
+COPY ./frontend .
+
+# Build production frontend
+RUN npm run build
+
+
+# ---------------------------------------------------------
+# STEP 3 — Final Image (Runs Backend + Serves Frontend)
+# ---------------------------------------------------------
 FROM python:3.11-slim
 
 WORKDIR /app
 ENV PYTHONPATH=/app
 
-# Copy FastAPI backend
+# System dependencies again (runtime)
+RUN apt-get update && apt-get install -y libpq-dev gcc
+
+# Copy backend (installed deps + code)
 COPY --from=backend-dev /app /app
 
-# Install Node.js and NPM for frontend dev
-RUN apt-get update && apt-get install -y nodejs npm
+# Copy built frontend
+COPY --from=frontend-dev /app/dist ./frontend_dist
 
-# Copy frontend files
-COPY --from=frontend-dev /app /app
-
-# Install any missing Python packages (if necessary)
-COPY ./backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Expose FastAPI and frontend ports
+# Expose API port
 EXPOSE 8000
 
-# Command to start FastAPI development server
+# Start FastAPI
 CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]

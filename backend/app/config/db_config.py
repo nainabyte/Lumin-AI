@@ -1,14 +1,12 @@
 from typing import List, Dict, Any
-from sqlalchemy import create_engine, inspect, text, inspect
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, Session
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import OpenAIEmbeddings
 from app.config.logging_config import get_logger
-# from langchain_community.vectorstores import PGVector
-from langchain_postgres import PGVector
 from langchain_postgres.vectorstores import PGVector
 from fastapi import HTTPException
-from langchain.schema import Document
+# FIX: Updated import from langchain.schema to langchain_core.documents
+from langchain_core.documents import Document
 import pandas as pd
 from app.config.env import (DATABASE_URL)
 from typing import List, Optional
