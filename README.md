@@ -6,16 +6,6 @@
 
 LUMIN is an intelligent data analysis platform that transforms how you interact with your data. Using LLM, LUMIN enables you to ask analytical questions about your data in plain English and receive insights through beautiful visualizations and clear explanations.
 
-## 🎥 Demo 
-
-<div align="center">
-  <a href="https://www.youtube.com/watch?v=jR0rGJOhxIw">
-    <img src="https://img.youtube.com/vi/jR0rGJOhxIw/maxresdefault.jpg" alt="Video Demo" style="width:100%;">
-  </a>
-</div>
-
-**Youtube Video URL :** https://www.youtube.com/watch?v=jR0rGJOhxIw
-
 ## 🚀 Quick Start
 
 ### Prerequisites
